@@ -1,0 +1,32 @@
+[
+  {
+    "userId": "55555",
+    "votes": {
+      "Candidate for Mayor": "john-doe",
+      "Candidate for City Council": "jane-smith",
+      "Candidate for School Board": "mike-johnson",
+      "Candidate for Treasurer": "lilian-grace",
+      "Candidate for Sheriff": "emily-davis"
+    }
+  },
+  {
+    "userId": "55556",
+    "votes": {
+      "Candidate for Mayor": "victor-james",
+      "Candidate for City Council": "jane-smith",
+      "Candidate for School Board": "mike-johnson",
+      "Candidate for Treasurer": "lilian-grace",
+      "Candidate for Sheriff": "emily-davis"
+    }
+  },
+  {
+    "userId": "55559",
+    "votes": {
+      "Candidate for Mayor": "victor-james",
+      "Candidate for City Council": "jane-smith",
+      "Candidate for School Board": "mike-johnson",
+      "Candidate for Treasurer": "sarah-brown",
+      "Candidate for Sheriff": "emily-davis"
+    }
+  }
+]

@@ -1,0 +1,29 @@
+[
+  {
+    "matricNumber": "55555",
+    "fullName": "John Abimbola",
+    "department": "Science",
+    "faculty": "Technology",
+    "hallOfResidence": "Independence Hall",
+    "level": 500,
+    "password": "888888"
+  },
+  {
+    "matricNumber": "55556",
+    "fullName": "John Abimbola",
+    "department": "Science",
+    "faculty": "Technology",
+    "hallOfResidence": "Independence Hall",
+    "level": 500,
+    "password": "kdkkddk"
+  },
+  {
+    "matricNumber": "55559",
+    "fullName": "John Abimbola",
+    "department": "Science",
+    "faculty": "Technology",
+    "hallOfResidence": "Independence Hall",
+    "level": 500,
+    "password": "NNMMMM"
+  }
+]

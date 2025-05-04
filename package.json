@@ -1,0 +1,28 @@
+{
+  "name": "my-election-backend",
+  "version": "1.0.0",
+  "description": "my local backend",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "build": "echo \"Building the project...\""
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.5.0",
+    "express-validator": "^7.2.1",
+    "mongodb": "^6.16.0",
+    "mongoose": "^8.14.1",
+    "nodemon": "^3.1.10",
+    "pg": "^8.15.6",
+    "write-file-atomic": "^6.0.0"
+  }
+}
