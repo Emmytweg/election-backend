@@ -1,7 +1,7 @@
-// server.js
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 const User = require('./models/User');
 const Vote = require('./models/Vote');
 require('dotenv').config();
@@ -11,21 +11,21 @@ const port = process.env.PORT || 8080;
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3001', 'https://election-website-xi.vercel.app' , '*']
+  origin: ['http://localhost:3000', 'https://election-website-xi.vercel.app']
 }));
 app.use(express.json());
 
-// Connect to MongoDB
+// MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
-.then(() => console.log('✅ Connected to MongoDB Atlas'))
-.catch(err => console.error('❌ MongoDB connection error:', err));
+  .then(() => console.log('✅ Connected to MongoDB Atlas'))
+  .catch(err => console.error('❌ MongoDB connection error:', err));
 
-// Default route
+// Routes
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the Election API!' });
 });
 
-// Register a new user
+// User registration
 app.post('/users', async (req, res) => {
   const { matricNumber, fullName, department, faculty, hallOfResidence, level, password } = req.body;
 
@@ -38,19 +38,33 @@ app.post('/users', async (req, res) => {
     return res.status(400).json({ message: 'Matric Number already registered. Please login instead.' });
   }
 
-  const newUser = new User({ matricNumber, fullName, department, faculty, hallOfResidence, level, password });
-  await newUser.save();
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const newUser = new User({
+    matricNumber,
+    fullName,
+    department,
+    faculty,
+    hallOfResidence,
+    level,
+    password: hashedPassword
+  });
 
+  await newUser.save();
   const { password: _, ...userWithoutPassword } = newUser.toObject();
   res.status(201).json({ message: 'User registered successfully', user: userWithoutPassword });
 });
 
-// Login
+// User login
 app.post('/login', async (req, res) => {
   const { matricNumber, password } = req.body;
 
-  const user = await User.findOne({ matricNumber, password });
+  const user = await User.findOne({ matricNumber });
   if (!user) {
+    return res.status(401).json({ message: 'Invalid matric number or password' });
+  }
+
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
     return res.status(401).json({ message: 'Invalid matric number or password' });
   }
 
@@ -58,7 +72,7 @@ app.post('/login', async (req, res) => {
   res.status(200).json({ user: userData });
 });
 
-// Cast a vote
+// Vote
 app.post('/vote', async (req, res) => {
   const { userId, candidateId, position } = req.body;
 
@@ -81,13 +95,12 @@ app.post('/vote', async (req, res) => {
   res.status(200).json({ message: 'Vote recorded successfully.', votes: userVote.votes });
 });
 
-// GET all votes
+// Get votes
 app.get('/votes', async (req, res) => {
   const votes = await Vote.find().populate('userId', 'matricNumber fullName');
   res.json({ votes });
 });
 
-// Start server
 app.listen(port, () => {
-  console.log(`✅ Server is running on http://localhost:${port}`);
+  console.log(`✅ Server running at http://localhost:${port}`);
 });
