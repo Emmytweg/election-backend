@@ -9,10 +9,12 @@ require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 8080;
 
+
 // Middleware
-app.use(cors({
-  origin: ['http://localhost:3000', 'https://election-website-xi.vercel.app']
-}));
+app.use(cors())
+// app.use(cors({
+//   origin: ['http://localhost:3000', 'https://election-website-xi.vercel.app']
+// }));
 app.use(express.json());
 
 // MongoDB connection
@@ -27,32 +29,44 @@ app.get('/', (req, res) => {
 
 // User registration
 app.post('/users', async (req, res) => {
+  console.log("POST /users hit with body:", req.body);
+
   const { matricNumber, fullName, department, faculty, hallOfResidence, level, password } = req.body;
 
   if (!matricNumber || !fullName || !password) {
+    console.log("❌ Missing required fields");
     return res.status(400).json({ message: 'Missing required fields' });
   }
 
   const existing = await User.findOne({ matricNumber });
   if (existing) {
+    console.log("⚠️ User already exists:", matricNumber);
     return res.status(400).json({ message: 'Matric Number already registered. Please login instead.' });
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const newUser = new User({
-    matricNumber,
-    fullName,
-    department,
-    faculty,
-    hallOfResidence,
-    level,
-    password: hashedPassword
-  });
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = new User({
+      matricNumber,
+      fullName,
+      department,
+      faculty,
+      hallOfResidence,
+      level,
+      password: hashedPassword
+    });
 
-  await newUser.save();
-  const { password: _, ...userWithoutPassword } = newUser.toObject();
-  res.status(201).json({ message: 'User registered successfully', user: userWithoutPassword });
+    await newUser.save();
+    console.log("✅ User saved to DB");
+
+    const { password: _, ...userWithoutPassword } = newUser.toObject();
+    res.status(201).json({ message: 'User registered successfully', user: userWithoutPassword });
+  } catch (err) {
+    console.error("❌ Error saving user:", err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 });
+
 
 // User login
 app.post('/login', async (req, res) => {
