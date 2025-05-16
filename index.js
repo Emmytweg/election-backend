@@ -47,8 +47,7 @@ app.get('/', (req, res) => {
 
 // User registration
 app.post('/signup', async (req, res) => {
-
-
+  try {
     const { matricNumber, fullName, department, faculty, hallOfResidence, level, password } = req.body;
 
     if (!matricNumber || !fullName || !password) {
@@ -79,8 +78,12 @@ app.post('/signup', async (req, res) => {
     const { password: _, ...userWithoutPassword } = newUser.toObject();
     res.status(201).json({ message: 'User registered successfully', user: userWithoutPassword });
 
- 
+  } catch (err) {
+    console.error("❌ Internal Server Error:", err);
+    res.status(500).json({ message: "Internal Server Error", error: err.message });
+  }
 });
+
 
 
 
