@@ -34,7 +34,7 @@ const User = mongoose.model('User', new mongoose.Schema({
 
 // Vote Schema
 const Vote = mongoose.model('Vote', new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  userId: { type: String, ref: 'User' },
     votes: {
       type: Map,
       of: String  // position => candidateId
@@ -107,29 +107,50 @@ app.post('/login', async (req, res) => {
 
 // Vote
 app.post('/vote', async (req, res) => {
-  const { userId, candidateId, position } = req.body;
+  try {
+    const { userId, candidateId, position } = req.body;
 
-  if (!userId || !candidateId || !position) {
-    return res.status(400).json({ message: 'All fields are required.' });
-  }
-
-  let userVote = await Vote.findOne({ userId });
-
-  if (!userVote) {
-    userVote = new Vote({ userId, votes: { [position]: candidateId } });
-  } else {
-    if (userVote.votes.has(position)) {
-      return res.status(400).json({ message: 'You have already voted for this position.' });
+    if (!userId || !candidateId || !position) {
+      return res.status(400).json({ message: 'All fields are required.' });
     }
-    userVote.votes.set(position, candidateId);
-  }
 
-  await userVote.save();
-  res.status(200).json({ message: 'Vote recorded successfully.', votes: userVote.votes });
+    let userVote = await Vote.findOne({ userId });
+
+    if (!userVote) {
+      userVote = new Vote({ userId, votes: { [position]: candidateId } });
+    } else {
+      if (userVote.votes.has(position)) {
+        return res.status(400).json({ message: 'You have already voted for this position.' });
+      }
+      userVote.votes.set(position, candidateId);
+    }
+
+    await userVote.save();
+    res.status(200).json({ message: 'Vote recorded successfully.', votes: userVote.votes });
+
+  } catch (err) {
+    console.error('❌ Vote Error:', err);
+    res.status(500).json({ message: 'Internal Server Error', error: err.message });
+  }
+});
+
+// Get votes by user
+app.get('/vote/:matricNumber', async (req, res) => {
+  try {
+    const { matricNumber } = req.params;
+    const vote = await Vote.findOne({ userId: matricNumber });
+
+    if (!vote) return res.json({}); // no votes yet
+
+    res.json(vote.votes);
+  } catch (err) {
+    console.error('❌ Fetch vote error:', err);
+    res.status(500).json({ message: 'Error retrieving votes', error: err.message });
+  }
 });
 
 // Get votes
-app.get('/votes', async (req, res) => {
+app.get('/vote', async (req, res) => {
   const votes = await Vote.find().populate('userId', 'matricNumber fullName');
   res.json({ votes });
 });
