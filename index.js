@@ -2,8 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
-const User = require('./models/User');
-const Vote = require('./models/Vote');
+// const User = require('./models/User');
+// const Vote = require('./models/Vote');
 require('dotenv').config();
 
 const app = express();
@@ -21,30 +21,47 @@ app.use(express.json());
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ Connected to MongoDB Atlas'))
   .catch(err => console.error('❌ MongoDB connection error:', err));
+// User Schema
+const User = mongoose.model('User', new mongoose.Schema({ 
+  matricNumber: { type: String, required: true, unique: true },
+  fullName: { type: String, required: true },
+  department: String,
+  faculty: String,
+  hallOfResidence: String,
+  level: Number,
+  password: { type: String, required: true }
+}))
 
+// Vote Schema
+const Vote = mongoose.model('Vote', new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    votes: {
+      type: Map,
+      of: String  // position => candidateId
+    }
+}));
 // Routes
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the Election API!' });
 });
 
 // User registration
-app.post('/users', async (req, res) => {
-  console.log("POST /users hit with body:", req.body);
+app.post('/signup', async (req, res) => {
 
-  const { matricNumber, fullName, department, faculty, hallOfResidence, level, password } = req.body;
 
-  if (!matricNumber || !fullName || !password) {
-    console.log("❌ Missing required fields");
-    return res.status(400).json({ message: 'Missing required fields' });
-  }
+    const { matricNumber, fullName, department, faculty, hallOfResidence, level, password } = req.body;
 
-  const existing = await User.findOne({ matricNumber });
-  if (existing) {
-    console.log("⚠️ User already exists:", matricNumber);
-    return res.status(400).json({ message: 'Matric Number already registered. Please login instead.' });
-  }
+    if (!matricNumber || !fullName || !password) {
+      console.log("❌ Missing required fields");
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
 
-  try {
+    const existing = await User.findOne({ matricNumber });
+    if (existing) {
+      console.log("⚠️ User already exists:", matricNumber);
+      return res.status(400).json({ message: 'Matric Number already registered. Please login instead.' });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({
       matricNumber,
@@ -61,11 +78,10 @@ app.post('/users', async (req, res) => {
 
     const { password: _, ...userWithoutPassword } = newUser.toObject();
     res.status(201).json({ message: 'User registered successfully', user: userWithoutPassword });
-  } catch (err) {
-    console.error("❌ Error saving user:", err);
-    res.status(500).json({ message: 'Internal server error' });
-  }
+
+ 
 });
+
 
 
 // User login
