@@ -29,7 +29,15 @@ const User = mongoose.model('User', new mongoose.Schema({
   password: { type: String, required: true }
 }));
 
-// Vote Schema (no ref; we use matricNumber directly)
+// Candidate Schema
+const Candidate = mongoose.model('Candidate', new mongoose.Schema({
+  fullName: String,
+  position: String,
+  department: String,
+  image: String,
+}));
+
+// Vote Schema
 const Vote = mongoose.model('Vote', new mongoose.Schema({
   userId: { type: String, required: true },  // matricNumber
   votes: {
@@ -49,7 +57,6 @@ app.get('/', (req, res) => {
 app.post('/signup', async (req, res) => {
   try {
     const { matricNumber, fullName, department, faculty, hallOfResidence, level, password } = req.body;
-
     if (!matricNumber || !fullName || !password) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
@@ -88,11 +95,10 @@ app.post('/login', async (req, res) => {
   res.status(200).json({ user: userData });
 });
 
-// Submit a vote
+// Submit vote
 app.post('/vote', async (req, res) => {
   try {
     const { userId, candidateId, position } = req.body;
-
     if (!userId || !candidateId || !position) {
       return res.status(400).json({ message: 'All fields are required.' });
     }
@@ -123,8 +129,7 @@ app.get('/vote/:matricNumber', async (req, res) => {
     const { matricNumber } = req.params;
     const vote = await Vote.findOne({ userId: matricNumber });
 
-    if (!vote) return res.json({}); // no votes yet
-
+    if (!vote) return res.json({});
     res.json(vote.votes);
   } catch (err) {
     console.error('❌ Fetch vote error:', err);
@@ -132,38 +137,22 @@ app.get('/vote/:matricNumber', async (req, res) => {
   }
 });
 
-// Get all votes with user info
-app.get('/vote', async (req, res) => {
-  try {
-    const allVotes = await Vote.find();
-
-    const result = {}; // position -> { candidateId: count }
-
-    allVotes.forEach(vote => {
-      const votes = vote.votes;
-      for (const [position, candidateId] of votes.entries()) {
-        if (!result[position]) result[position] = {};
-        if (!result[position][candidateId]) result[position][candidateId] = 0;
-        result[position][candidateId]++;
-      }
-    });
-
-    res.status(200).json({ result });
-  } catch (err) {
-    console.error("❌ Failed to fetch aggregated votes:", err);
-    res.status(500).json({ message: "Failed to fetch aggregated votes", error: err.message });
-  }
-});
-
-// Aggregated vote results
+// Aggregated vote results (cleaned)
 app.get('/results', async (req, res) => {
   try {
     const allVotes = await Vote.find();
+    const allCandidates = await Candidate.find();
+    const validPositions = [...new Set(allCandidates.map(c => c.position))];
 
-    const results = {}; // { position: { candidateId: count } }
+    const results = {};
 
     allVotes.forEach(({ votes }) => {
       for (let [position, candidateId] of votes.entries()) {
+        if (!validPositions.includes(position)) {
+          console.log(`🧹 Skipping invalid position: ${position}`);
+          continue;
+        }
+
         if (!results[position]) results[position] = {};
         results[position][candidateId] = (results[position][candidateId] || 0) + 1;
       }
@@ -172,10 +161,43 @@ app.get('/results', async (req, res) => {
     res.status(200).json({ results });
   } catch (err) {
     console.error('❌ Error aggregating results:', err);
-    res.status(500).json({ message: 'Failed to get results' });
+    res.status(500).json({ message: 'Failed to get results', error: err.message });
   }
 });
 
+// Optional route to delete invalid votes (manual cleanup)
+app.delete('/cleanup-invalid-votes', async (req, res) => {
+  try {
+    const allCandidates = await Candidate.find();
+    const validPositions = new Set(allCandidates.map(c => c.position));
+
+    const allVotes = await Vote.find();
+
+    let cleaned = 0;
+
+    for (let vote of allVotes) {
+      const original = new Map(vote.votes);
+      let updated = false;
+
+      for (let [pos] of original.entries()) {
+        if (!validPositions.has(pos)) {
+          vote.votes.delete(pos);
+          updated = true;
+        }
+      }
+
+      if (updated) {
+        await vote.save();
+        cleaned++;
+      }
+    }
+
+    res.json({ message: `🧹 Cleaned ${cleaned} vote record(s) with invalid positions.` });
+  } catch (err) {
+    console.error('❌ Cleanup error:', err);
+    res.status(500).json({ message: 'Failed to clean up invalid votes', error: err.message });
+  }
+});
 
 // Start server
 app.listen(port, () => {
