@@ -131,32 +131,32 @@ app.get('/results', async (_, res) => {
 });
 
 // Optional manual cleanup route
-app.delete('/cleanup-invalid-votes', async (_, res) => {
-  const candidates = await Candidate.find();
-  const validPositions = new Set(candidates.map(c => c.position));
-  const votes = await Vote.find();
+// app.delete('/cleanup-invalid-votes', async (_, res) => {
+//   const candidates = await Candidate.find();
+//   const validPositions = new Set(candidates.map(c => c.position));
+//   const votes = await Vote.find();
 
-  let cleaned = 0;
+//   let cleaned = 0;
 
-  for (const vote of votes) {
-    const original = new Map(vote.votes);
-    let changed = false;
+//   for (const vote of votes) {
+//     const original = new Map(vote.votes);
+//     let changed = false;
 
-    for (const [pos] of original.entries()) {
-      if (!validPositions.has(pos)) {
-        vote.votes.delete(pos);
-        changed = true;
-      }
-    }
+//     for (const [pos] of original.entries()) {
+//       if (!validPositions.has(pos)) {
+//         vote.votes.delete(pos);
+//         changed = true;
+//       }
+//     }
 
-    if (changed) {
-      await vote.save();
-      cleaned++;
-    }
-  }
+//     if (changed) {
+//       await vote.save();
+//       cleaned++;
+//     }
+//   }
 
-  res.json({ message: `🧹 Cleaned ${cleaned} invalid vote(s)` });
-});
+//   res.json({ message: `🧹 Cleaned ${cleaned} invalid vote(s)` });
+// });
 
 app.listen(port, () => {
   console.log(`✅ Server running on http://localhost:${port}`);
