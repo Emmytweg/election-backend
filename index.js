@@ -97,6 +97,17 @@ app.get('/vote/:matricNumber', async (req, res) => {
   res.json(vote ? vote.votes : {});
 });
 
+// Get all candidates
+app.get('/candidates', async (req, res) => {
+  try {
+    const candidates = await Candidate.find();
+    res.status(200).json({ candidates });
+  } catch (err) {
+    console.error('❌ Error fetching candidates:', err);
+    res.status(500).json({ message: 'Failed to fetch candidates', error: err.message });
+  }
+});
+
 app.get('/results', async (_, res) => {
   try {
     const votes = await Vote.find();
